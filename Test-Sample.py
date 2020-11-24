@@ -1,38 +1,43 @@
-import pyaudio
-import wave
+import argparse
+import sounddevice as sd
+import soundfile as sf
 
-form_1 = pyaudio.paInt16 # 16-bit resolution
-chans = 1 # 1 channel
-samp_rate = 44100 # 44.1kHz sampling rate
-chunk = 4096 # 2^12 samples for buffer
-record_secs = 3 # seconds to record
-dev_index = 4 # device index found by p.get_device_info_by_index(ii)
-wav_output_filename = 'test1.wav' # name of .wav file
 
-audio = pyaudio.PyAudio() # create pyaudio instantiation
+def int_or_str(text):
+    """Helper function for argument parsing."""
+    try:
+        return int(text)
+    except ValueError:
+        return text
 
-# create pyaudio stream
-stream = audio.open(format = form_1,rate = samp_rate,channels = chans, \
-                    input_device_index = dev_index,input = True, \
-                    frames_per_buffer=chunk)
-print("recording")
-frames = []
 
-# loop through stream and append audio chunks to frame array
-for ii in range(0,int((samp_rate/chunk)*record_secs)):
-    data = stream.read(chunk)
-    frames.append(data)
-print("finished recording")
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument(
+    '-l', '--list-devices', action='store_true',
+    help='show list of audio devices and exit')
+args, remaining = parser.parse_known_args()
+if args.list_devices:
+    print(sd.query_devices())
+    parser.exit(0)
+parser = argparse.ArgumentParser(
+    description=__doc__,
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    parents=[parser])
+parser.add_argument(
+    'filename', metavar='FILENAME',
+    help='audio file to be played back')
+parser.add_argument(
+    '-d', '--device', type=int_or_str,
+    help='output device (numeric ID or substring)')
+args = parser.parse_args(remaining)
 
-# stop the stream, close it, and terminate the pyaudio instantiation
-stream.stop_stream()
-stream.close()
-audio.terminate()
-
-# save the audio frames as .wav file
-wavefile = wave.open(wav_output_filename,'wb')
-wavefile.setnchannels(chans)
-wavefile.setsampwidth(audio.get_sample_size(form_1))
-wavefile.setframerate(samp_rate)
-wavefile.writeframes(b''.join(frames))
-wavefile.close()
+try:
+    data, fs = sf.read(args.filename, dtype='float32')
+    sd.play(data, fs, device=args.device)
+    status = sd.wait()
+except KeyboardInterrupt:
+    parser.exit('\nInterrupted by user')
+except Exception as e:
+    parser.exit(type(e).__name__ + ': ' + str(e))
+if status:
+    parser.exit('Error during playback: ' + str(status))
