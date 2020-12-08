@@ -1,24 +1,14 @@
-from struct import pack
-from math import sin, pi
-import wave
-import random
-from os.path import abspath
-
-# create a bytestring containing "short" (2-byte) sine values
-SAMPLE_RATE = 44100
-waveData = b''
-maxVol = 2**15-1.0
-frequencyHz = 500.0
-fileLengthSeconds = 3
-for i in range(0, SAMPLE_RATE * fileLengthSeconds):
-    pcmValue = sin(i*frequencyHz/SAMPLE_RATE * pi * 2)
-    pcmValue = int(maxVol*pcmValue)
-    waveData += pack('h', pcmValue)
-
-# save the bytestring as a wave file
-outputFileName = 'output.wav'
-wv = wave.open(outputFileName, 'w')
-wv.setparams((1, 2, SAMPLE_RATE, 0, 'NONE', 'not compressed'))
-wv.writeframes(waveData)
-wv.close()
-print(f"saved {abspath(outputFileName)}")
+# import required libraries 
+from pydub import AudioSegment  
+from pydub.playback import play 
+  
+# importing audio file 
+a = AudioSegment.from_file("delme_rec_unlimited_usug4fb0.wav")  
+  
+# Split stereo to mono  
+b = a.split_to_mono()  
+print(b)  
+print(b[0].channels ) 
+  
+  
+b[0].export(out_f="outNow.wav",format="wav")
