@@ -3,7 +3,7 @@ from pydub import AudioSegment
 from pydub.playback import play 
   
 # importing audio file 
-a = AudioSegment.from_file("delme_rec_unlimited_usug4fb0.wav")  
+a = AudioSegment.from_file("delme_rec_unlimited_9bk9jtc8.wav")  
   
 # Split stereo to mono  
 b = a.split_to_mono()  
